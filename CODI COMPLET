@@ -1,0 +1,449 @@
+#include <Servo.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+
+//SERVO
+int pos=0;
+int pos2=180;
+Servo servo_11;  // create servo object to control a servo
+Servo servo_12;  // create servo object to control a servo
+int button = 8; //boton
+int estado = LOW;
+int ledPin=13;
+//SERVO
+
+
+//PROXIMITAT
+int TRIG = 26;    // TRIG pin 10
+int ECHO = 24;      // ECHO pin 9
+int pBuzzer = 22;  // BUZZER pin 5
+int TIEMPO;
+int DISTANCIA;
+//PROXIMITAT
+
+//ULLS
+int ledPIN=6;
+//ULLS
+
+//NUCLI
+int led1 = 49;
+int led2 = 48;
+int led3 = 47;
+int led4 = 41;
+int led5 = 45;
+int led6 = 44;
+int led7 = 46;
+int led8 = 42;
+int led9 = 40;
+int led10 = 43;
+//NUCLI
+
+//TEMPERATURA
+#define SEALEVELPRESSURE_HPA (1024.25) 
+Adafruit_BME280 bme;
+//TEMPERATURA
+
+//PRUEBA
+ #define P1 1000
+ #define P2 100
+ #define P3 100
+ unsigned long t1 = 0;
+ unsigned long t2 = 0;
+ unsigned long t3 = 0;
+ 
+
+//PRUEBA
+
+void setup() {
+//SERVOS
+servo_11.attach(2);  // servo a pin 2
+  servo_12.attach(3);  // aservo a pin 3
+  servo_11.write(pos);
+  servo_12.write(pos2);
+  pinMode(button, INPUT); //boton
+  pinMode(ledPin,OUTPUT); //led comprueva boton
+  digitalWrite(ledPin, LOW);
+//SERVOS
+
+//PROXIMITAT
+  pinMode(TRIG, OUTPUT);  // TRIG como salida
+  pinMode(ECHO, INPUT);    // ECHO como entrada
+  pinMode(pBuzzer, OUTPUT);   // BUZZER como salida
+  Serial.begin(9600);     // inicializacion de comunicacion serial a 9600 bps
+//PROXIMITAT
+ 
+  //Esto son ojos
+  Serial.begin(9600);
+  pinMode(ledPIN, OUTPUT);//pin of the LED as an Output
+  //Hasta aqui ojo
+  
+//TEMPERATURA
+Serial.begin(9600);
+  if (!bme.begin(0x76)) {
+    Serial.println("BMP280 NO VA!");
+    while (1);
+  }
+//TEMPERATURA
+  
+  //Esto es corazon
+    pinMode(led1, OUTPUT);
+    pinMode(led2, OUTPUT);
+    pinMode(led3, OUTPUT);
+    pinMode(led9, OUTPUT);
+    pinMode(led5, OUTPUT);
+    pinMode(led6, OUTPUT);
+    pinMode(led7, OUTPUT);
+    pinMode(led8, OUTPUT);
+    pinMode(led4, OUTPUT);
+    pinMode(led10, OUTPUT);
+
+   //Hasta aqui corazon
+enciendeluces();
+
+}
+
+void loop() {
+//PRUEBA
+if(millis() > t1 + P1){
+  t1=millis();
+  tempe();}
+  
+if(millis() > t2 + P2){
+  t2=millis();
+  alertaproxi();}
+    
+if(digitalRead(button)==HIGH){
+  if(millis() > t3 + P3){
+     t3=millis();
+     servos();
+}}
+
+}
+void detectaboton(){
+while(digitalRead(button)==LOW);
+Serial.println("LOW");
+estado= digitalRead(ledPin);
+
+digitalWrite(ledPin,!estado); //enciende el led cuando clic boton
+
+while(digitalRead(button)==HIGH);
+Serial.println("HIGH");
+
+}
+
+void tempe(){
+//TEMPERATURA
+  Serial.print("Temperatura en deg C = ");
+  Serial.println(bme.readTemperature());
+
+  Serial.print("Pressió en hPa = ");
+  Serial.println(bme.readPressure() / 100.0F);
+
+  Serial.print("Altura en m = ");
+  Serial.println(bme.readAltitude(SEALEVELPRESSURE_HPA));
+
+  Serial.print("Humitat en %RH = ");
+  Serial.println(bme.readHumidity());
+
+  Serial.println();
+//TEMPERATURA
+}
+
+void alertaproxi(){
+  digitalWrite(TRIG, HIGH);     // generem pols per enviar
+  delay(1);       // esperem un milisegon
+  digitalWrite(TRIG, LOW);    // s'apaga
+  TIEMPO = pulseIn(ECHO, HIGH);  // rebem l'impuls enviat amb trig i l'igualem a la variable TIEMPO
+  DISTANCIA = TIEMPO / 58.2;    // ho dividim entre la constant 58.2 i obtenim la distancia en centímetres
+  Serial.println(DISTANCIA);    // s'envia la distancia a COM
+
+  if (DISTANCIA <= 40 && DISTANCIA >= 0){ // si la distancia es troba entre 0 i 30 cms.
+    delay(DISTANCIA * 10);      // tarda el temps proporcional a la distancia
+    digitalWrite(pBuzzer, HIGH); 
+
+    delay(40); 
+    digitalWrite(pBuzzer, LOW); 
+
+  }
+}
+
+
+void servos(){
+while(digitalRead(button)==LOW);
+estado= digitalRead(ledPin);
+
+digitalWrite(ledPin,!estado); //enciende el led cuando clic boton
+
+while(digitalRead(button)==HIGH);
+
+if(estado==LOW){ //Esto baja mascara
+  for (pos = 0; pos <= 180; pos += 1) { // va de 0 a 180 graus
+// en passos d'1 grau    
+    servo_11.write(pos);
+    servo_12.write(pos2-pos);
+    delay(28);
+  }
+  lucesojos(); //s'obren llums casc
+
+}
+
+if(estado==HIGH){ //Això puja la màscara
+  digitalWrite(ledPIN , LOW);
+  for (pos = 180; pos >= 0; pos -= 1) { // va de 180 a 0 graus
+    servo_11.write(pos);              // dir al servo que vagi a 'pos'
+    servo_12.write(pos2-pos);              // dir al servo que vagi a 'pos2'
+    //delay(28);    // espera 28 ms per cada grau escombrat
+  }
+}
+}
+
+void enciendeluces(){
+      digitalWrite(led1, HIGH);                  // 1 .- los leds encienden de izquierda a derecha
+      delay(60);
+      digitalWrite(led1, LOW);
+      delay(60);
+      digitalWrite(led2, HIGH);
+      delay(60);
+      digitalWrite(led2, LOW);
+      delay(60);
+      digitalWrite(led3, HIGH);
+      delay(60);
+      digitalWrite(led3, LOW);
+      delay(60);
+      digitalWrite(led4, HIGH);
+      delay(60);
+      digitalWrite(led4, LOW);
+      delay(60);
+      digitalWrite(led5, HIGH);
+      delay(60);
+      digitalWrite(led5, LOW);
+      delay(60);
+      digitalWrite(led6, HIGH);
+      delay(60);
+      digitalWrite(led6, LOW);
+      delay(60);
+      digitalWrite(led7, HIGH);
+      delay(60);
+      digitalWrite(led7, LOW);
+      delay(60);
+      digitalWrite(led8, HIGH);
+      delay(60);
+      digitalWrite(led8, LOW);
+      delay(60);
+      digitalWrite(led9, HIGH);
+      delay(60);
+      digitalWrite(led9, LOW);
+      delay(60);
+      digitalWrite(led10, HIGH);
+      delay(60);
+      digitalWrite(led10, LOW);
+      delay(60);
+ 
+      
+/////////////////////////////////////////////////////////////////////
+
+    
+      digitalWrite(led10, HIGH);
+      delay(60);
+      digitalWrite(led10, LOW);
+      delay(60);    
+      digitalWrite(led9, HIGH);
+      delay(60);
+      digitalWrite(led9, LOW);
+      delay(60);     
+      digitalWrite(led8, HIGH);
+      delay(60);
+      digitalWrite(led8, LOW);
+      delay(60);
+      digitalWrite(led7, HIGH);
+      delay(60);
+      digitalWrite(led7, LOW);
+      delay(60);     
+      digitalWrite(led6, HIGH);
+      delay(60);
+      digitalWrite(led6, LOW);
+      delay(60);
+      digitalWrite(led5, HIGH);
+      delay(60);
+      digitalWrite(led5, LOW);
+      delay(60);     
+      digitalWrite(led4, HIGH);
+      delay(60);
+      digitalWrite(led4, LOW);
+      delay(60);  
+      digitalWrite(led3, HIGH);
+      delay(60);
+      digitalWrite(led3, LOW);
+      delay(60);    
+      digitalWrite(led2, HIGH);
+      delay(60);
+      digitalWrite(led2, LOW);
+      delay(60);
+      digitalWrite(led1, HIGH);
+      delay(60);
+      digitalWrite(led1, LOW);
+      delay(60);
+ ////////////////////////////////////////////////
+       digitalWrite(led1, HIGH);                  // los leds encienden de izquierda a derecha
+      delay(60);
+      digitalWrite(led1, LOW);
+      delay(60);
+      digitalWrite(led2, HIGH);
+      delay(60);
+      digitalWrite(led2, LOW);
+      delay(60);
+      digitalWrite(led3, HIGH);
+      delay(60);
+      digitalWrite(led3, LOW);
+      delay(60);
+      digitalWrite(led4, HIGH);
+      delay(60);
+      digitalWrite(led4, LOW);
+      delay(60);
+      digitalWrite(led5, HIGH);
+      delay(60);
+      digitalWrite(led5, LOW);
+      delay(60);
+      digitalWrite(led6, HIGH);
+      delay(60);
+      digitalWrite(led6, LOW);
+      delay(60);
+      digitalWrite(led7, HIGH);
+      delay(60);
+      digitalWrite(led7, LOW);
+      delay(60);
+      digitalWrite(led8, HIGH);
+      delay(60);
+      digitalWrite(led8, LOW);
+      delay(60);
+      digitalWrite(led9, HIGH);
+      delay(60);
+      digitalWrite(led9, LOW);
+      delay(60);
+      digitalWrite(led10, HIGH);
+      delay(60);
+      digitalWrite(led10, LOW);
+      delay(60);
+
+      
+/////////////////////////////////////////////////////////////////////
+
+   
+      digitalWrite(led10, HIGH);
+      delay(60);
+      digitalWrite(led10, LOW);
+      delay(60);    
+      digitalWrite(led9, HIGH);
+      delay(60);
+      digitalWrite(led9, LOW);
+      delay(60);     
+      digitalWrite(led8, HIGH);
+      delay(60);
+      digitalWrite(led8, LOW);
+      delay(60);
+      digitalWrite(led7, HIGH);
+      delay(60);
+      digitalWrite(led7, LOW);
+      delay(60);     
+      digitalWrite(led6, HIGH);
+      delay(60);
+      digitalWrite(led6, LOW);
+      delay(60);
+      digitalWrite(led5, HIGH);
+      delay(60);
+      digitalWrite(led5, LOW);
+      delay(60);     
+      digitalWrite(led4, HIGH);
+      delay(60);
+      digitalWrite(led4, LOW);
+      delay(60);  
+      digitalWrite(led3, HIGH);
+      delay(60);
+      digitalWrite(led3, LOW);
+      delay(60);    
+      digitalWrite(led2, HIGH);
+      delay(60);
+      digitalWrite(led2, LOW);
+      delay(60);
+      digitalWrite(led1, HIGH);
+      delay(60);
+      digitalWrite(led1, LOW);
+      delay(60);     
+
+////////////////////////////////////////////
+
+      digitalWrite(led1, HIGH);         // 2.- todos los leds se encienden y apagan por 500 milisegundos
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, HIGH);
+      digitalWrite(led9, HIGH);
+      digitalWrite(led10, HIGH);
+
+      delay(500);
+      digitalWrite(led1, LOW);
+      digitalWrite(led2, LOW);
+      digitalWrite(led3, LOW);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+      digitalWrite(led10, LOW);
+  
+      delay(500);
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, HIGH);
+      digitalWrite(led9, HIGH);
+      digitalWrite(led10, HIGH);
+ 
+      delay(500);
+      digitalWrite(led1, LOW);
+      digitalWrite(led2, LOW);
+      digitalWrite(led3, LOW);
+      digitalWrite(led4, LOW);
+      digitalWrite(led5, LOW);
+      digitalWrite(led6, LOW);
+      digitalWrite(led7, LOW);
+      digitalWrite(led8, LOW);
+      digitalWrite(led9, LOW);
+      digitalWrite(led10, LOW);
+
+      delay(500);
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, HIGH);
+      digitalWrite(led3, HIGH);
+      digitalWrite(led4, HIGH);
+      digitalWrite(led5, HIGH);
+      digitalWrite(led6, HIGH);
+      digitalWrite(led7, HIGH);
+      digitalWrite(led8, HIGH);
+      digitalWrite(led9, HIGH);
+      digitalWrite(led10, HIGH);
+
+      delay(500);
+}
+
+void lucesojos(){
+  digitalWrite(ledPIN , HIGH);
+         delay(10);
+   digitalWrite(ledPIN , LOW);
+         delay(200);
+   digitalWrite(ledPIN , HIGH);
+         delay(100);
+   digitalWrite(ledPIN , LOW);
+         delay(300);
+   digitalWrite(ledPIN , HIGH);
+         delay(300);
+}
